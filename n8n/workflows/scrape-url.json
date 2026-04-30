@@ -1,0 +1,69 @@
+{
+  "name": "PRO DATA AI - URL Content Scraper",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "path": "scrape-url",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [500, 300],
+      "parameters": {
+        "url": "={{$json.body.url}}",
+        "method": "GET",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "name": "Extract Content",
+      "type": "n8n-nodes-base.code",
+      "position": [750, 300],
+      "parameters": {
+        "code": "// Extract meaningful content from HTML\nconst html = $input.first().json.data;\n\n// Simple content extraction (in production, use a proper HTML parser)\nconst text = html.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();\n\n// Limit to first 5000 characters\nconst content = text.slice(0, 5000);\n\nreturn { json: { content, url: $json.body.url, success: true } };"
+      }
+    },
+    {
+      "name": "Save to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "insert",
+        "table": "content_inputs",
+        "columns": "workspace_id,input_type,raw_content,source_url",
+        "values": "={{$json.body.workspace_id}},url,={{$json.content}},={{$json.url}}"
+      }
+    },
+    {
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1250, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{{ \"success\": true, \"message\": \"Content scraped successfully\" }}}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Extract Content", "type": "main", "index": 0 }]]
+    },
+    "Extract Content": {
+      "main": [[{ "node": "Save to Supabase", "type": "main", "index": 0 }]]
+    },
+    "Save to Supabase": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  }
+}

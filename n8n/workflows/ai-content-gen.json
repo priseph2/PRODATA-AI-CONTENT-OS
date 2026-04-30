@@ -1,0 +1,95 @@
+{
+  "name": "PRO DATA AI - AI Content Generator",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "path": "generate-content",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "Get Workspace",
+      "type": "n8n-nodes-base.supabase",
+      "position": [500, 300],
+      "parameters": {
+        "operation": "select",
+        "table": "workspaces",
+        "columns": "*",
+        "filter": "id=$1",
+        "filterParams": ["={{$json.body.workspace_id}}"]
+      }
+    },
+    {
+      "name": "Call OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "position": [750, 200],
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are an expert social media content creator. Generate platform-specific content based on the brand profile provided."
+          },
+          {
+            "role": "user",
+            "content": "={{$json.body.input_text}}"
+          }
+        ],
+        "options": {
+          "temperature": 0.8
+        }
+      }
+    },
+    {
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "position": [1000, 300],
+      "parameters": {
+        "code": "// Parse AI response and save generated content\nconst response = $input.first().json;\nconst content = response.choices[0].message.content;\nconst workspaceId = $json.body.workspace_id;\nconst platforms = $json.body.platforms || ['instagram', 'facebook', 'linkedin', 'twitter'];\n\n// In production, parse the structured response\n// For now, save as raw content\nreturn { json: { content, workspaceId, platforms, success: true } };"
+      }
+    },
+    {
+      "name": "Save Generated Content",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1250, 300],
+      "parameters": {
+        "operation": "insert",
+        "table": "generated_content",
+        "columns": "workspace_id,content_type,platform,content_text,status",
+        "values": "={{$json.workspaceId}},caption,={{$json.platforms[0]}},={{$json.content}},'draft'"
+      }
+    },
+    {
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1500, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{{ \"success\": true, \"message\": \"Content generated\" }}}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Get Workspace", "type": "main", "index": 0 }]]
+    },
+    "Get Workspace": {
+      "main": [[{ "node": "Call OpenAI", "type": "main", "index": 0 }]]
+    },
+    "Call OpenAI": {
+      "main": [[{ "node": "Parse Response", "type": "main", "index": 0 }]]
+    },
+    "Parse Response": {
+      "main": [[{ "node": "Save Generated Content", "type": "main", "index": 0 }]]
+    },
+    "Save Generated Content": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  }
+}
