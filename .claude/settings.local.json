@@ -3,7 +3,19 @@
     "allow": [
       "Bash(git init *)",
       "Bash(git config *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh auth *)",
+      "Bash(Get-ChildItem -Recurse -File -Exclude *.pyc,__pycache__)",
+      "Bash(Select-Object -First 50 FullName)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git restore *)",
+      "Bash(ssh-add *)",
+      "Bash(git remote *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)"
     ]
   }
 }
