@@ -5,12 +5,17 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
   // Sign out from Supabase
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
 
-  // Redirect to home page
+  // Create redirect response
   const response = NextResponse.redirect(new URL("/", request.url), {
     status: 303,
   });
+
+  // Explicitly clear auth cookies
+  response.cookies.set("sb-access-token", "", { maxAge: 0, path: "/" });
+  response.cookies.set("sb-refresh-token", "", { maxAge: 0, path: "/" });
+  response.cookies.set("sb-auth-token", "", { maxAge: 0, path: "/" });
 
   return response;
 }
