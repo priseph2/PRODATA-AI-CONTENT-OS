@@ -32,68 +32,114 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950" />
+        <div className="absolute top-1/2 left-0 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-10">
+          <div className="w-full h-full bg-cyan-500 rounded-full" />
+        </div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-10">
+          <div className="w-full h-full bg-coral-500 rounded-full" />
+        </div>
+      </div>
+
+      <div className="w-full max-w-md animate-fadeInUp">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <span className="text-xl">⚡</span>
+        <div className="text-center mb-12">
+          <Link href="/" className="inline-flex items-center gap-3 mb-2 group">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-xl gradient-cyan-coral opacity-20 blur-lg" />
+              <div className="relative w-12 h-12 rounded-xl gradient-cyan-coral flex items-center justify-center transform group-hover:scale-110 transition-transform">
+                <span className="text-xl">✨</span>
+              </div>
             </div>
-            <span className="text-2xl font-bold text-white">PRO DATA AI<span className="text-purple-400">OS</span></span>
+            <span className="text-2xl font-bold">
+              PRO DATA AI<span className="gradient-text">OS</span>
+            </span>
           </Link>
+          <p className="text-gray-400 mt-2 text-sm">Content that converts, effortlessly</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-8">
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-400 mb-6">Sign in to your account</p>
+        {/* Form Card */}
+        <div className="card-glass border-cyan-400/20 p-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+            <p className="text-gray-400">Sign in to continue creating</p>
+          </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
-              {error}
+            <div className="mb-6 p-4 rounded-lg bg-coral-500/10 border border-coral-400/30 text-coral-400 text-sm animate-slideInRight">
+              <p className="font-medium">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm text-slate-300 mb-2">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email Address
+              </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                className="input-modern"
                 placeholder="you@example.com"
                 required
+                disabled={loading}
               />
             </div>
+
             <div>
-              <label htmlFor="password" className="block text-sm text-slate-300 mb-2">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                className="input-modern"
                 placeholder="••••••••"
                 required
+                disabled={loading}
               />
             </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-slate-400 text-sm">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-purple-400 hover:text-purple-300">Sign up</Link>
-          </p>
+          <div className="mt-8 pt-6 border-t border-cyan-400/10">
+            <p className="text-center text-gray-400 text-sm">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+                Create one now
+              </Link>
+            </p>
+          </div>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-500 text-xs mt-8">
+          By signing in, you agree to our Terms of Service
+        </p>
       </div>
     </main>
   );

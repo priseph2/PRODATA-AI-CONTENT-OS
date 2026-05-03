@@ -70,16 +70,16 @@ export default function WorkspacesPage() {
   );
 
   return (
-    <div className="p-8">
+    <div className="p-8 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Workspaces</h1>
-          <p className="text-slate-400 mt-1">Manage your client workspaces</p>
+          <h1 className="text-4xl font-bold text-white">Workspaces</h1>
+          <p className="text-gray-400 mt-2">Manage your client workspaces and campaigns</p>
         </div>
         <Link
           href="/dashboard/workspaces/new"
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-500 transition-colors"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           New Workspace
@@ -88,60 +88,63 @@ export default function WorkspacesPage() {
 
       {/* Search */}
       <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search workspaces..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+          className="input-modern pl-12"
         />
       </div>
 
       {/* Workspaces Grid */}
       {loading ? (
-        <div className="text-slate-400 text-center py-12">Loading workspaces...</div>
+        <div className="text-gray-400 text-center py-12">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-cyan-400/20 border-t-cyan-400 rounded-full mb-4" />
+          <p>Loading workspaces...</p>
+        </div>
       ) : filteredWorkspaces.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-slate-400 mb-4">No workspaces found</p>
+        <div className="text-center py-20 card-glass p-12 border-cyan-400/20">
+          <p className="text-gray-400 mb-6 text-lg">No workspaces found</p>
           <Link
             href="/dashboard/workspaces/new"
-            className="text-purple-400 hover:text-purple-300"
+            className="inline-block btn-primary"
           >
             Create your first workspace
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredWorkspaces.map((workspace) => (
             <div
               key={workspace.id}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-purple-500/50 transition-colors"
+              className="card-glass border-cyan-400/20 p-6 hover:border-cyan-400/50 transition-all duration-300 group"
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{workspace.name}</h3>
-                  <p className="text-slate-400 text-sm">{workspace.niche || "No niche set"}</p>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-white group-hover:gradient-text transition-all">{workspace.name}</h3>
+                  <p className="text-gray-400 text-sm mt-1">{workspace.niche || "No niche set"}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleDuplicate(workspace)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-cyan-400 rounded-lg transition-colors"
                     title="Duplicate"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                   <Link
                     href={`/dashboard/workspaces/${workspace.id}`}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-cyan-400 rounded-lg transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4" />
                   </Link>
                   <button
                     onClick={() => handleDelete(workspace.id)}
-                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-coral-400 rounded-lg transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -151,11 +154,11 @@ export default function WorkspacesPage() {
 
               {/* Brand Colors */}
               {workspace.brand_colors && workspace.brand_colors.length > 0 && (
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-6 pb-6 border-b border-cyan-400/10">
                   {workspace.brand_colors.map((color, i) => (
                     <div
                       key={i}
-                      className="w-6 h-6 rounded-full border border-slate-600"
+                      className="w-8 h-8 rounded-lg border border-cyan-400/20 shadow-lg"
                       style={{ backgroundColor: color }}
                       title={color}
                     />
@@ -164,32 +167,32 @@ export default function WorkspacesPage() {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-slate-800 rounded-lg py-2 px-3">
-                  <p className="text-white font-semibold">0</p>
-                  <p className="text-slate-500">Content</p>
+              <div className="grid grid-cols-3 gap-3 text-center text-xs mb-6">
+                <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
+                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-gray-400 text-xs mt-1">Content</p>
                 </div>
-                <div className="bg-slate-800 rounded-lg py-2 px-3">
-                  <p className="text-white font-semibold">0</p>
-                  <p className="text-slate-500">Approved</p>
+                <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
+                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-gray-400 text-xs mt-1">Approved</p>
                 </div>
-                <div className="bg-slate-800 rounded-lg py-2 px-3">
-                  <p className="text-white font-semibold">0</p>
-                  <p className="text-slate-500">Scheduled</p>
+                <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
+                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-gray-400 text-xs mt-1">Scheduled</p>
                 </div>
               </div>
 
-              {/* AI Provider Badge */}
-              <div className="mt-4 flex items-center justify-between">
-                <span className={`text-xs px-2 py-1 rounded-full ${
+              {/* AI Provider Badge & Status */}
+              <div className="flex items-center justify-between pt-4 border-t border-cyan-400/10">
+                <span className={`text-xs px-3 py-1 rounded-full font-medium ${
                   workspace.ai_provider === "claude"
-                    ? "bg-orange-500/20 text-orange-400"
-                    : "bg-green-500/20 text-green-400"
+                    ? "bg-amber-400/20 text-amber-300"
+                    : "bg-green-400/20 text-green-300"
                 }`}>
                   {workspace.ai_provider === "claude" ? "Claude" : "OpenAI"}
                 </span>
-                <span className={`text-xs ${workspace.is_active ? "text-green-400" : "text-slate-500"}`}>
-                  {workspace.is_active ? "Active" : "Inactive"}
+                <span className={`text-xs font-medium ${workspace.is_active ? "text-cyan-400" : "text-gray-500"}`}>
+                  {workspace.is_active ? "● Active" : "Inactive"}
                 </span>
               </div>
             </div>
