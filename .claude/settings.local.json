@@ -15,7 +15,8 @@
       "Bash(ssh-add *)",
       "Bash(git remote *)",
       "Bash(npm run *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(Set-ExecutionPolicy *)"
     ]
   }
 }
