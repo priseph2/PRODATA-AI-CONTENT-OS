@@ -34,32 +34,45 @@ export async function updateSession(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Redirect to login if accessing protected route without auth
+  // Protected routes - must be authenticated
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       const response = NextResponse.redirect(url);
 
-      // Clear all Supabase auth cookies explicitly
+      // Aggressively clear all auth cookies
       response.cookies.delete("sb-access-token");
       response.cookies.delete("sb-refresh-token");
       response.cookies.delete("sb-auth-token");
       response.cookies.delete("sb-token-cache");
 
+      // Clear any cookie with sb- prefix
+      request.cookies.getAll().forEach((cookie) => {
+        if (cookie.name.includes("sb-") || cookie.name.includes("auth")) {
+          response.cookies.delete(cookie.name);
+        }
+      });
+
       return response;
     }
+
+    // Authenticated user on dashboard - no caching
+    supabaseResponse.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
   }
 
-  // Redirect to dashboard if accessing auth pages while logged in
-  if ((request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup") && session) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // Auth pages - must NOT be authenticated
+  if (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup") {
+    if (session) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
 
-  // Disable caching for authenticated routes to prevent stale content
-  if (session && request.nextUrl.pathname.startsWith("/dashboard")) {
+    // Not authenticated on auth page - allow access, no caching
     supabaseResponse.headers.set(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate"
