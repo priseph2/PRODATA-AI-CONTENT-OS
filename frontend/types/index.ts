@@ -1,5 +1,3 @@
-import type { Workspace, ContentInput, GeneratedContent, ScheduledPost, User } from "@/types";
-
 export interface User {
   id: string;
   email: string;
