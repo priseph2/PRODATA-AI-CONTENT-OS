@@ -1,7 +1,7 @@
-// TODO: Re-enable after fixing middleware
-// import { createClient } from "@/lib/supabase/server";
-// import { redirect } from "next/navigation";
+"use client";
+
 import Link from "next/link";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -13,17 +13,11 @@ import {
   LogOut,
 } from "lucide-react";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Re-enable auth check after fixing middleware for Edge Functions
-  // const supabase = await createClient();
-  // const { data: { user } } = await supabase.auth.getUser();
-  // if (!user) {
-  //   redirect("/login");
-  // }
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -34,7 +28,8 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <ProtectedRoute>
+      <div className="min-h-screen flex">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
         {/* Logo */}
@@ -87,5 +82,6 @@ export default async function DashboardLayout({
         {children}
       </main>
     </div>
+    </ProtectedRoute>
   );
 }
