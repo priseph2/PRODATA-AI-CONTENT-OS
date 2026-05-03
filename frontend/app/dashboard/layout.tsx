@@ -82,7 +82,7 @@ export default function DashboardLayout({
               <Settings className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm hidden sm:block">Settings</span>
             </Link>
-            <form action="/auth/signout" method="post">
+            <form action="/api/auth/signout" method="post">
               <button
                 type="submit"
                 className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-all duration-200"
