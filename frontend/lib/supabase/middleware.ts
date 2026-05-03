@@ -39,7 +39,15 @@ export async function updateSession(request: NextRequest) {
     if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      return NextResponse.redirect(url);
+      const response = NextResponse.redirect(url);
+
+      // Clear all Supabase auth cookies explicitly
+      response.cookies.delete("sb-access-token");
+      response.cookies.delete("sb-refresh-token");
+      response.cookies.delete("sb-auth-token");
+      response.cookies.delete("sb-token-cache");
+
+      return response;
     }
   }
 

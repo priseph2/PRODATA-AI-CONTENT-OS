@@ -2,28 +2,22 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 export async function signOut() {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Sign out from Supabase
-  await supabase.auth.signOut();
+    // Call signOut - this should clear the session on the server
+    const { error } = await supabase.auth.signOut();
 
-  // Clear all auth-related cookies
-  const cookieStore = await cookies();
+    if (error) {
+      console.error("SignOut error:", error);
+    }
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
 
-  // Remove Supabase auth cookies
-  const authCookies = [
-    "sb-access-token",
-    "sb-refresh-token",
-    "sb-auth-token",
-    "sb-token-cache",
-  ];
-
-  authCookies.forEach((cookie) => {
-    cookieStore.delete(cookie);
-  });
-
+  // Always redirect to home, regardless of signOut result
+  // The middleware will validate on next request
   redirect("/");
 }
