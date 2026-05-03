@@ -24,6 +24,19 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --navy-950: #0f0f1e;
+    --navy-900: #1a1a2e;
+    --navy-800: #24243e;
+    --navy-700: #2d2d4d;
+    --cyan-400: #00d4ff;
+    --cyan-500: #00b8e6;
+    --coral-400: #ff6b5b;
+    --coral-500: #ff5245;
+    --amber-400: #ffc857;
+    --white: #ffffff;
+    --gray-200: #e8e8ea;
+    --gray-300: #d4d4d8;
+    --gray-400: #a1a1a6;
   }
 
   .dark {
@@ -45,23 +58,6 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
-}
-
-/* Modern color palette */
-:root {
-  --navy-950: #0f0f1e;
-  --navy-900: #1a1a2e;
-  --navy-800: #24243e;
-  --navy-700: #2d2d4d;
-  --cyan-400: #00d4ff;
-  --cyan-500: #00b8e6;
-  --coral-400: #ff6b5b;
-  --coral-500: #ff5245;
-  --amber-400: #ffc857;
-  --white: #ffffff;
-  --gray-200: #e8e8ea;
-  --gray-300: #d4d4d8;
-  --gray-400: #a1a1a6;
 }
 
 @layer base {

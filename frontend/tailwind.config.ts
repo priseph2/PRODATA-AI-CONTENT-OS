@@ -37,6 +37,28 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        navy: {
+          950: "var(--navy-950)",
+          900: "var(--navy-900)",
+          800: "var(--navy-800)",
+          700: "var(--navy-700)",
+        },
+        cyan: {
+          400: "var(--cyan-400)",
+          500: "var(--cyan-500)",
+        },
+        coral: {
+          400: "var(--coral-400)",
+          500: "var(--coral-500)",
+        },
+        amber: {
+          400: "var(--amber-400)",
+        },
+        gray: {
+          200: "var(--gray-200)",
+          300: "var(--gray-300)",
+          400: "var(--gray-400)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
