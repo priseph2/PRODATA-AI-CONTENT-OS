@@ -3,21 +3,23 @@ import Link from "next/link";
 import { FolderKanban, FileText, CheckSquare, Calendar, Zap, Plus } from "lucide-react";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // TODO: Re-enable Supabase auth after fixing middleware
+  // const supabase = await createClient();
+  // const { data: { user } } = await supabase.auth.getUser();
+  // const { count: workspaceCount } = await supabase
+  //   .from("workspaces")
+  //   .select("*", { count: "exact", head: true })
+  //   .eq("user_id", user?.id);
 
-  // Get workspace count
-  const { count: workspaceCount } = await supabase
-    .from("workspaces")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user?.id);
+  const user = null;
+  const workspaceCount = 0;
 
   return (
     <div className="p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Welcome back, {user?.email?.split("@")[0]}</h1>
+          <h1 className="text-3xl font-bold text-white">Welcome back, {user?.email?.split("@")[0] || "User"}</h1>
           <p className="text-slate-400 mt-1">Here's what's happening with your content</p>
         </div>
         <Link

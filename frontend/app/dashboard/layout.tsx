@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+// TODO: Re-enable after fixing middleware
+// import { createClient } from "@/lib/supabase/server";
+// import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -17,12 +18,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  // TODO: Re-enable auth check after fixing middleware for Edge Functions
+  // const supabase = await createClient();
+  // const { data: { user } } = await supabase.auth.getUser();
+  // if (!user) {
+  //   redirect("/login");
+  // }
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
