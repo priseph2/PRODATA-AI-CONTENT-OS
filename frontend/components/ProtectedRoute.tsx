@@ -7,37 +7,44 @@ import { createClient } from "@/lib/supabase/client";
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const verifyAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
-      setIsAuthenticated(true);
-      setIsLoading(false);
+      setIsReady(true);
     };
 
-    checkAuth();
+    verifyAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.replace("/login");
+      }
+    });
+
+    return () => subscription?.unsubscribe();
   }, [router, supabase.auth]);
 
-  if (isLoading) {
+  if (!isReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950">
         <div className="text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">⚡</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl gradient-cyan-coral mb-4 animate-pulse">
+            <span className="text-2xl">✨</span>
           </div>
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
-  return isAuthenticated ? children : null;
+  return children;
 }
