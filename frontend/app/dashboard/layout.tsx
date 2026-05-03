@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { signOut } from "@/app/actions/auth";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -18,7 +19,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -82,15 +83,15 @@ export default function DashboardLayout({
               <Settings className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm hidden sm:block">Settings</span>
             </Link>
-            <form action="/api/auth/signout" method="post">
-              <button
-                type="submit"
-                className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-all duration-200"
-              >
-                <LogOut className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm hidden sm:block">Sign Out</span>
-              </button>
-            </form>
+            <button
+              onClick={async () => {
+                await signOut();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-all duration-200"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm hidden sm:block">Sign Out</span>
+            </button>
           </div>
         </aside>
 

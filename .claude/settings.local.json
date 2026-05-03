@@ -16,7 +16,9 @@
       "Bash(git remote *)",
       "Bash(npm run *)",
       "Bash(npm install *)",
-      "Bash(Set-ExecutionPolicy *)"
+      "Bash(Set-ExecutionPolicy *)",
+      "PowerShell(cd \"C:\\\\Users\\\\princ\\\\Downloads\\\\PRODATA-AI-CONTENT-OS\\\\frontend\"; $env:PORT=3000; npm run dev 2>&1 | Select-Object -First 100)",
+      "PowerShell(cd \"C:\\\\Users\\\\princ\\\\Downloads\\\\PRODATA-AI-CONTENT-OS\\\\frontend\"; $env:PORT=3000; npm run dev 2>&1 | Select-Object -First 50)"
     ]
   }
 }
