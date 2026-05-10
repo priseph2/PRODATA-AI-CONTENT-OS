@@ -1,17 +1,37 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Workspace, SocialAccount } from "@/types";
-import { Trash2, LogOut, Zap } from "lucide-react";
+import { Trash2, LogOut, Zap, Check, X } from "lucide-react";
 
 export default function SettingsPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState("");
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const error = searchParams.get("error");
+
+    if (connected) {
+      const platformName = connected.charAt(0).toUpperCase() + connected.slice(1);
+      setSuccessMessage(`${platformName} connected successfully!`);
+      setTimeout(() => setSuccessMessage(""), 5000);
+    }
+
+    if (error) {
+      setErrorMessage(error);
+      setTimeout(() => setErrorMessage(""), 5000);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -117,6 +137,26 @@ export default function SettingsPage() {
 
   return (
     <div className="p-8 space-y-8">
+      {/* Success Banner */}
+      {successMessage && (
+        <div className="flex items-center gap-3 card-glass border border-green-400/20 bg-green-400/10 px-6 py-4 rounded-lg z-40">
+          <Check className="w-5 h-5 text-green-400" />
+          <div>
+            <p className="text-white font-medium">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="flex items-center gap-3 card-glass border border-red-400/20 bg-red-400/10 px-6 py-4 rounded-lg z-40">
+          <X className="w-5 h-5 text-red-400" />
+          <div>
+            <p className="text-white font-medium">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-white">Settings</h1>
@@ -163,7 +203,14 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-white font-medium">{platform.name}</p>
                     {isConnected && account?.account_name && (
-                      <p className="text-gray-400 text-sm">@{account.account_name}</p>
+                      <>
+                        <p className="text-gray-400 text-sm">@{account.account_name}</p>
+                        {account.expires_at && (
+                          <p className="text-gray-500 text-xs">
+                            Token expires: {new Date(account.expires_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </>
                     )}
                     {!isConnected && (
                       <p className="text-gray-500 text-sm">Not connected</p>

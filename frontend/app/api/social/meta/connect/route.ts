@@ -34,8 +34,10 @@ export async function GET(request: Request) {
     const scopes = [
       "pages_manage_posts",
       "pages_show_list",
+      "pages_read_engagement",
       "instagram_basic",
       "instagram_content_publish",
+      "instagram_manage_insights",
     ];
 
     const redirectUri = encodeURIComponent(`${APP_URL}/api/social/meta/callback`);

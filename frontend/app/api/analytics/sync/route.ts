@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     // Fetch all published posts with platform_post_id
     const { data: publishedPosts, error: postsError } = await supabase
       .from("scheduled_posts")
-      .select("id, platform, platform_post_id")
+      .select("id, workspace_id, platform, platform_post_id")
       .eq("workspace_id", workspace_id)
       .eq("status", "published")
       .not("platform_post_id", "is", null);
@@ -111,11 +111,6 @@ async function syncPostAnalytics(
       metrics = "post_impressions,post_impressions_unique,post_clicks,post_reactions_like_total";
     } else {
       return { success: false };
-    }
-
-    const url = `${metricsUrl}?metric=${metrics}&access_token=${account.access_token}`;
-    if (post.platform === "instagram") {
-      url.concat("&period=lifetime");
     }
 
     const response = await fetch(

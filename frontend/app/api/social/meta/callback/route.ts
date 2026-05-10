@@ -9,9 +9,8 @@ export async function GET(request: Request) {
     const error = searchParams.get("error");
 
     if (error) {
-      return NextResponse.redirect(
-        `/dashboard/settings?error=User cancelled OAuth`
-      );
+      const redirectUrl = new URL("/dashboard/settings?error=User cancelled OAuth", request.url);
+      return NextResponse.redirect(redirectUrl.toString());
     }
 
     if (!code || !state) {
@@ -63,24 +62,23 @@ export async function GET(request: Request) {
     let accessToken = tokenData.access_token;
 
     // Exchange short-lived token for long-lived token (if it's a user token)
+    let expiresIn = 5184000; // 60 days default
     if (accessToken) {
+      const exchangeParams = new URLSearchParams({
+        grant_type: "fb_exchange_token",
+        client_id: META_APP_ID,
+        client_secret: META_APP_SECRET,
+        fb_exchange_token: accessToken,
+      });
       const longLivedResponse = await fetch(
-        `https://graph.facebook.com/v18.0/oauth/access_token`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            grant_type: "fb_exchange_token",
-            client_id: META_APP_ID,
-            client_secret: META_APP_SECRET,
-            fb_exchange_token: accessToken,
-          }).toString(),
-        }
+        `https://graph.facebook.com/v18.0/oauth/access_token?${exchangeParams.toString()}`,
+        { method: "GET" }
       );
 
       if (longLivedResponse.ok) {
         const longLivedData = await longLivedResponse.json();
         accessToken = longLivedData.access_token;
+        expiresIn = longLivedData.expires_in || expiresIn;
       }
     }
 
@@ -91,21 +89,34 @@ export async function GET(request: Request) {
 
     if (!pagesResponse.ok) {
       console.error("Failed to fetch pages");
-      return NextResponse.redirect(
-        `/dashboard/settings?error=Failed to fetch Facebook pages`
-      );
+      const redirectUrl = new URL("/dashboard/settings?error=Failed to fetch Facebook pages", request.url);
+      return NextResponse.redirect(redirectUrl.toString());
     }
 
     const pagesData = await pagesResponse.json();
     const pages = pagesData.data || [];
 
     if (pages.length === 0) {
-      return NextResponse.redirect(
-        `/dashboard/settings?error=No Facebook pages found. Please create one first.`
+      const redirectUrl = new URL("/dashboard/settings?error=No Facebook pages found. Please create one first.", request.url);
+      return NextResponse.redirect(redirectUrl.toString());
+    }
+
+    // Fetch account name from Meta
+    let accountName = "Connected Account";
+    try {
+      const meResponse = await fetch(
+        `https://graph.facebook.com/v18.0/me?fields=name&access_token=${accessToken}`
       );
+      if (meResponse.ok) {
+        const meData = await meResponse.json();
+        accountName = meData.name || "Connected Account";
+      }
+    } catch (e) {
+      console.warn("Failed to fetch account name:", e);
     }
 
     const supabase = await createClient();
+    const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
     // For Instagram: find Instagram Business account
     // For Facebook: use the page itself
@@ -127,9 +138,8 @@ export async function GET(request: Request) {
       const foundPage = pageResults.find(result => result !== null);
 
       if (!foundPage) {
-        return NextResponse.redirect(
-          `/dashboard/settings?error=No Instagram Business account found. Link one to your Facebook Page first.`
-        );
+        const redirectUrl = new URL("/dashboard/settings?error=No Instagram Business account found. Link one to your Facebook Page first.", request.url);
+        return NextResponse.redirect(redirectUrl.toString());
       }
 
       igAccountId = foundPage.igAccountId;
@@ -146,15 +156,16 @@ export async function GET(request: Request) {
             access_token: pageAccessToken,
             account_id: igAccountId,
             page_id: pageId,
+            account_name: accountName,
+            expires_at: expiresAt,
           },
           { onConflict: "workspace_id,platform" }
         );
 
       if (insertError) {
         console.error("Failed to save IG account:", insertError);
-        return NextResponse.redirect(
-          `/dashboard/settings?error=Failed to save account`
-        );
+        const redirectUrl = new URL("/dashboard/settings?error=Failed to save account", request.url);
+        return NextResponse.redirect(redirectUrl.toString());
       }
     } else if (platform === "facebook") {
       // Use first Facebook page
@@ -169,23 +180,24 @@ export async function GET(request: Request) {
             access_token: page.access_token,
             account_id: page.id,
             page_id: page.id,
+            account_name: accountName,
+            expires_at: expiresAt,
           },
           { onConflict: "workspace_id,platform" }
         );
 
       if (insertError) {
         console.error("Failed to save FB account:", insertError);
-        return NextResponse.redirect(
-          `/dashboard/settings?error=Failed to save account`
-        );
+        const redirectUrl = new URL("/dashboard/settings?error=Failed to save account", request.url);
+        return NextResponse.redirect(redirectUrl.toString());
       }
     }
 
-    return NextResponse.redirect(`/dashboard/settings?connected=${platform}`);
+    const redirectUrl = new URL(`/dashboard/settings?connected=${platform}`, request.url);
+    return NextResponse.redirect(redirectUrl.toString());
   } catch (error) {
     console.error("OAuth callback error:", error);
-    return NextResponse.redirect(
-      `/dashboard/settings?error=An error occurred during authentication`
-    );
+    const redirectUrl = new URL("/dashboard/settings?error=An error occurred during authentication", request.url);
+    return NextResponse.redirect(redirectUrl.toString());
   }
 }
