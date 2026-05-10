@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS generated_content (
   content_text TEXT NOT NULL,
   status VARCHAR DEFAULT 'draft' CHECK (status IN ('draft', 'approved', 'rejected', 'published')),
   scheduled_at TIMESTAMPTZ,
+  image_url TEXT,
+  template_id UUID,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -68,7 +70,10 @@ CREATE TABLE IF NOT EXISTS scheduled_posts (
   platform VARCHAR NOT NULL,
   scheduled_at TIMESTAMPTZ NOT NULL,
   published_at TIMESTAMPTZ,
-  status VARCHAR DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'published', 'failed'))
+  platform_post_id VARCHAR,
+  status VARCHAR DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'published', 'failed')),
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Social accounts table (for OAuth tokens)
@@ -76,11 +81,46 @@ CREATE TABLE IF NOT EXISTS social_accounts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
   platform VARCHAR NOT NULL,
+  account_id VARCHAR,
+  page_id VARCHAR,
   access_token TEXT,
   refresh_token TEXT,
   expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(workspace_id, platform)
+);
+
+-- Content templates table
+CREATE TABLE IF NOT EXISTS content_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  name VARCHAR NOT NULL,
+  platform VARCHAR NOT NULL,
+  template_text TEXT NOT NULL,
+  category VARCHAR,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Post analytics table
+CREATE TABLE IF NOT EXISTS post_analytics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  scheduled_post_id UUID REFERENCES scheduled_posts(id) ON DELETE CASCADE,
+  platform VARCHAR NOT NULL,
+  platform_post_id VARCHAR,
+  views INTEGER DEFAULT 0,
+  likes INTEGER DEFAULT 0,
+  comments INTEGER DEFAULT 0,
+  shares INTEGER DEFAULT 0,
+  saved INTEGER DEFAULT 0,
+  reach INTEGER DEFAULT 0,
+  total_interactions INTEGER DEFAULT 0,
+  post_impressions INTEGER DEFAULT 0,
+  post_impressions_unique INTEGER DEFAULT 0,
+  post_clicks INTEGER DEFAULT 0,
+  post_reactions_like_total INTEGER DEFAULT 0,
+  synced_at TIMESTAMPTZ DEFAULT now(),
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Recipes/Automation table
@@ -104,6 +144,13 @@ CREATE INDEX IF NOT EXISTS idx_generated_content_workspace_id ON generated_conte
 CREATE INDEX IF NOT EXISTS idx_generated_content_status ON generated_content(status);
 CREATE INDEX IF NOT EXISTS idx_scheduled_posts_workspace_id ON scheduled_posts(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_scheduled_posts_scheduled_at ON scheduled_posts(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_scheduled_posts_platform ON scheduled_posts(platform);
+CREATE INDEX IF NOT EXISTS idx_scheduled_posts_status ON scheduled_posts(status);
+CREATE INDEX IF NOT EXISTS idx_social_accounts_workspace_platform ON social_accounts(workspace_id, platform);
+CREATE INDEX IF NOT EXISTS idx_content_templates_workspace_id ON content_templates(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_post_analytics_workspace_id ON post_analytics(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_post_analytics_scheduled_post_id ON post_analytics(scheduled_post_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_post_analytics_unique_post ON post_analytics(scheduled_post_id);
 
 -- Row Level Security (RLS) - IMPORTANT for production
 ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
@@ -112,6 +159,8 @@ ALTER TABLE generated_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visual_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scheduled_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE social_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
@@ -132,6 +181,16 @@ CREATE POLICY "Users can view their own content inputs"
 CREATE POLICY "Users can insert their own content inputs"
   ON content_inputs FOR INSERT
   WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM workspaces
+      WHERE workspaces.id = content_inputs.workspace_id
+      AND workspaces.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete their own content inputs"
+  ON content_inputs FOR DELETE
+  USING (
     EXISTS (
       SELECT 1 FROM workspaces
       WHERE workspaces.id = content_inputs.workspace_id
@@ -165,6 +224,26 @@ CREATE POLICY "Users can manage their own social accounts"
     EXISTS (
       SELECT 1 FROM workspaces
       WHERE workspaces.id = social_accounts.workspace_id
+      AND workspaces.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can manage their own content templates"
+  ON content_templates FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM workspaces
+      WHERE workspaces.id = content_templates.workspace_id
+      AND workspaces.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view their own post analytics"
+  ON post_analytics FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM workspaces
+      WHERE workspaces.id = post_analytics.workspace_id
       AND workspaces.user_id = auth.uid()
     )
   );

@@ -1,158 +1,182 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import type { Workspace } from "@/types";
 import { ChevronLeft, Plus, X } from "lucide-react";
 
-export default function NewWorkspacePage() {
+export default function EditWorkspacePage() {
   const router = useRouter();
+  const params = useParams();
+  const workspaceId = (params?.id || "") as string;
   const supabase = createClient();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [formData, setFormData] = useState({
-    name: "",
-    niche: "",
-    website_url: "",
-    brand_voice: "",
-    cta_style: "",
-    target_audience: "",
-    offer_products: "",
-    content_pillars: [] as string[],
-    forbidden_words: [] as string[],
-    ai_provider: "openai" as "openai" | "claude",
-    social_handles: {
-      instagram: "",
-      facebook: "",
-      linkedin: "",
-      twitter: "",
-    },
-    brand_colors: [] as string[],
-  });
-
+  const [formData, setFormData] = useState<Workspace | null>(null);
   const [newPillar, setNewPillar] = useState("");
   const [newForbiddenWord, setNewForbiddenWord] = useState("");
   const [newColor, setNewColor] = useState("");
 
-  const addPillar = () => {
-    if (newPillar.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        content_pillars: [...prev.content_pillars, newPillar.trim()]
-      }));
-      setNewPillar("");
+  useEffect(() => {
+    fetchWorkspace();
+  }, [workspaceId]);
+
+  const fetchWorkspace = async () => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("workspaces")
+        .select("*")
+        .eq("id", workspaceId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!data) throw new Error("Workspace not found");
+
+      setFormData(data as Workspace);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load workspace");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const addPillar = () => {
+    if (!formData || !newPillar.trim()) return;
+    setFormData(prev => prev ? {
+      ...prev,
+      content_pillars: [...(prev.content_pillars || []), newPillar.trim()]
+    } : null);
+    setNewPillar("");
   };
 
   const removePillar = (index: number) => {
-    setFormData(prev => ({
+    if (!formData) return;
+    setFormData(prev => prev ? {
       ...prev,
       content_pillars: prev.content_pillars.filter((_, i) => i !== index)
-    }));
+    } : null);
   };
 
   const addForbiddenWord = () => {
-    if (newForbiddenWord.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        forbidden_words: [...prev.forbidden_words, newForbiddenWord.trim()]
-      }));
-      setNewForbiddenWord("");
-    }
+    if (!formData || !newForbiddenWord.trim()) return;
+    setFormData(prev => prev ? {
+      ...prev,
+      forbidden_words: [...(prev.forbidden_words || []), newForbiddenWord.trim()]
+    } : null);
+    setNewForbiddenWord("");
   };
 
   const removeForbiddenWord = (index: number) => {
-    setFormData(prev => ({
+    if (!formData) return;
+    setFormData(prev => prev ? {
       ...prev,
       forbidden_words: prev.forbidden_words.filter((_, i) => i !== index)
-    }));
+    } : null);
   };
 
   const addColor = () => {
-    if (newColor.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        brand_colors: [...prev.brand_colors, newColor.trim()]
-      }));
-      setNewColor("");
-    }
+    if (!formData || !newColor.trim()) return;
+    setFormData(prev => prev ? {
+      ...prev,
+      brand_colors: [...(prev.brand_colors || []), newColor.trim()]
+    } : null);
+    setNewColor("");
   };
 
   const removeColor = (index: number) => {
-    setFormData(prev => ({
+    if (!formData) return;
+    setFormData(prev => prev ? {
       ...prev,
       brand_colors: prev.brand_colors.filter((_, i) => i !== index)
-    }));
+    } : null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (!formData) return;
     const { name, value } = e.target;
 
     if (name.startsWith("social_")) {
       const platform = name.replace("social_", "");
-      setFormData(prev => ({
+      setFormData(prev => prev ? {
         ...prev,
         social_handles: {
           ...prev.social_handles,
           [platform as keyof typeof prev.social_handles]: value
         }
-      }));
+      } : null);
     } else {
-      setFormData(prev => ({
+      setFormData(prev => prev ? {
         ...prev,
         [name]: value
-      }));
+      } : null);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData) return;
+
     setError("");
-    setLoading(true);
+    setSaving(true);
 
     try {
-      if (!formData.name.trim()) {
-        throw new Error("Workspace name is required");
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("You must be logged in to create a workspace");
-      }
-
-      const { error: insertError } = await supabase
+      const { error: updateError } = await supabase
         .from("workspaces")
-        .insert([
-          {
-            user_id: user.id,
-            name: formData.name,
-            niche: formData.niche,
-            website_url: formData.website_url,
-            brand_voice: formData.brand_voice,
-            cta_style: formData.cta_style,
-            target_audience: formData.target_audience,
-            offer_products: formData.offer_products,
-            content_pillars: formData.content_pillars,
-            forbidden_words: formData.forbidden_words,
-            ai_provider: formData.ai_provider,
-            social_handles: formData.social_handles,
-            brand_colors: formData.brand_colors,
-            is_active: true,
-          }
-        ]);
+        .update({
+          name: formData.name,
+          niche: formData.niche,
+          website_url: formData.website_url,
+          brand_voice: formData.brand_voice,
+          cta_style: formData.cta_style,
+          target_audience: formData.target_audience,
+          offer_products: formData.offer_products,
+          content_pillars: formData.content_pillars,
+          forbidden_words: formData.forbidden_words,
+          ai_provider: formData.ai_provider,
+          social_handles: formData.social_handles,
+          brand_colors: formData.brand_colors,
+          is_active: formData.is_active,
+        })
+        .eq("id", workspaceId);
 
-      if (insertError) throw insertError;
+      if (updateError) throw updateError;
 
       router.push("/dashboard/workspaces");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create workspace");
+      setError(err instanceof Error ? err.message : "Failed to update workspace");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-cyan-400/20 border-t-cyan-400 rounded-full mb-4" />
+          <p className="text-gray-400">Loading workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950 p-8">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-coral-400">{error || "Workspace not found"}</p>
+          <Link href="/dashboard/workspaces" className="btn-primary inline-block mt-4">
+            Back to Workspaces
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950 p-8">
@@ -166,8 +190,8 @@ export default function NewWorkspacePage() {
             <ChevronLeft className="w-6 h-6 text-gray-400" />
           </Link>
           <div>
-            <h1 className="text-4xl font-bold text-white">Create Workspace</h1>
-            <p className="text-gray-400 mt-2">Set up a new workspace with your brand profile</p>
+            <h1 className="text-4xl font-bold text-white">Edit Workspace</h1>
+            <p className="text-gray-400 mt-2">{formData.name}</p>
           </div>
         </div>
 
@@ -193,7 +217,6 @@ export default function NewWorkspacePage() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="e.g., Scentified"
                   className="input-modern w-full"
                   required
                 />
@@ -209,7 +232,6 @@ export default function NewWorkspacePage() {
                     name="niche"
                     value={formData.niche}
                     onChange={handleInputChange}
-                    placeholder="e.g., Luxury perfume subscription"
                     className="input-modern w-full"
                   />
                 </div>
@@ -223,7 +245,6 @@ export default function NewWorkspacePage() {
                     name="website_url"
                     value={formData.website_url}
                     onChange={handleInputChange}
-                    placeholder="https://example.com"
                     className="input-modern w-full"
                   />
                 </div>
@@ -239,7 +260,6 @@ export default function NewWorkspacePage() {
                     name="target_audience"
                     value={formData.target_audience}
                     onChange={handleInputChange}
-                    placeholder="e.g., Women 25-45 who value self-care"
                     className="input-modern w-full"
                   />
                 </div>
@@ -253,7 +273,6 @@ export default function NewWorkspacePage() {
                     name="offer_products"
                     value={formData.offer_products}
                     onChange={handleInputChange}
-                    placeholder="e.g., Monthly perfume subscriptions"
                     className="input-modern w-full"
                   />
                 </div>
@@ -274,7 +293,6 @@ export default function NewWorkspacePage() {
                   name="brand_voice"
                   value={formData.brand_voice}
                   onChange={handleInputChange}
-                  placeholder="e.g., Sophisticated, sensual, confident"
                   rows={3}
                   className="input-modern w-full resize-none"
                 />
@@ -290,7 +308,6 @@ export default function NewWorkspacePage() {
                     name="cta_style"
                     value={formData.cta_style}
                     onChange={handleInputChange}
-                    placeholder="e.g., Shop now / Subscribe / Discover"
                     className="input-modern w-full"
                   />
                 </div>
@@ -464,7 +481,6 @@ export default function NewWorkspacePage() {
                     name={`social_${platform}`}
                     value={formData.social_handles[platform as keyof typeof formData.social_handles]}
                     onChange={handleInputChange}
-                    placeholder={`@handle or username`}
                     className="input-modern w-full"
                   />
                 </div>
@@ -482,10 +498,10 @@ export default function NewWorkspacePage() {
             </Link>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="px-6 py-3 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating..." : "Create Workspace"}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

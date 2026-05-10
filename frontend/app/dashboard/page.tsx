@@ -1,26 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { FolderKanban, FileText, CheckSquare, Calendar, Zap, Plus } from "lucide-react";
+import { FolderKanban, Zap, CheckSquare, Plus } from "lucide-react";
+import { DashboardStats } from "@/components/DashboardStats";
 
-export default async function DashboardPage() {
-  // TODO: Re-enable Supabase auth after fixing middleware
-  // const supabase = await createClient();
-  // const { data: { user } } = await supabase.auth.getUser();
-  // const { count: workspaceCount } = await supabase
-  //   .from("workspaces")
-  //   .select("*", { count: "exact", head: true })
-  //   .eq("user_id", user?.id);
-
-  const user = null;
-  const workspaceCount = 0;
-
-  const stats = [
-    { icon: FolderKanban, label: "Workspaces", value: workspaceCount || 0, color: "cyan" },
-    { icon: FileText, label: "Content Inputs", value: 0, color: "amber" },
-    { icon: CheckSquare, label: "Pending Approval", value: 0, color: "green" },
-    { icon: Calendar, label: "Scheduled Posts", value: 0, color: "coral" },
-  ];
-
+export default function DashboardPage() {
   const actions = [
     {
       href: "/dashboard/workspaces",
@@ -60,35 +42,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => {
-          const colorMap = {
-            cyan: "border-cyan-400/20 bg-cyan-400/5",
-            amber: "border-amber-400/20 bg-amber-400/5",
-            green: "border-green-400/20 bg-green-400/5",
-            coral: "border-coral-400/20 bg-coral-400/5",
-          };
-          const iconColorMap = {
-            cyan: "text-cyan-400",
-            amber: "text-amber-400",
-            green: "text-green-400",
-            coral: "text-coral-400",
-          };
-          return (
-            <div key={i} className={`card-glass border ${colorMap[stat.color as keyof typeof colorMap]} p-6 hover:border-opacity-50 transition-all`}>
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg bg-navy-800/50 ${iconColorMap[stat.color as keyof typeof iconColorMap]}`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
-                  <p className="text-gray-400 text-sm mt-1">{stat.label}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <DashboardStats />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -9,6 +9,8 @@ import {
   FileText,
   CheckSquare,
   Calendar,
+  LayoutTemplate,
+  BarChart2,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -27,6 +29,8 @@ export default function DashboardLayout({
     { href: "/dashboard/content", icon: FileText, label: "Content" },
     { href: "/dashboard/approval", icon: CheckSquare, label: "Approval" },
     { href: "/dashboard/schedule", icon: Calendar, label: "Schedule" },
+    { href: "/dashboard/templates", icon: LayoutTemplate, label: "Templates" },
+    { href: "/dashboard/analytics", icon: BarChart2, label: "Analytics" },
   ];
 
   const isActive = (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(href));

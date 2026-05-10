@@ -1,31 +1,90 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Workspace } from "@/types";
 import { Plus, Edit, Trash2, Copy, MoreHorizontal, Search } from "lucide-react";
 
 export default function WorkspacesPage() {
+  const router = useRouter();
   const supabase = createClient();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [stats, setStats] = useState<Record<string, { content: number; approved: number; scheduled: number }>>({});
 
   useEffect(() => {
     fetchWorkspaces();
   }, []);
 
   const fetchWorkspaces = async () => {
-    const { data, error } = await supabase
-      .from("workspaces")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("workspaces")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setWorkspaces(data);
+      console.log("Fetched workspaces:", data?.length || 0, "Error:", error);
+
+      if (error) {
+        console.error("Error fetching workspaces:", error);
+        return;
+      }
+
+      if (data) {
+        console.log("Setting workspaces:", data);
+        setWorkspaces(data);
+        await fetchStats(data);
+      }
+    } catch (err) {
+      console.error("Exception fetching workspaces:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const fetchStats = async (workspaceList: Workspace[]) => {
+    const statsMap: Record<string, { content: number; approved: number; scheduled: number }> = {};
+    const concurrencyLimit = 5;
+
+    const fetchWorkspaceStats = async (workspace: Workspace) => {
+      try {
+        const [contentRes, approvedRes, scheduledRes] = await Promise.all([
+          supabase
+            .from("content_inputs")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspace.id),
+          supabase
+            .from("generated_content")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspace.id)
+            .eq("status", "approved"),
+          supabase
+            .from("scheduled_posts")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspace.id),
+        ]);
+
+        statsMap[workspace.id] = {
+          content: contentRes.count ?? 0,
+          approved: approvedRes.count ?? 0,
+          scheduled: scheduledRes.count ?? 0,
+        };
+      } catch (error) {
+        console.error(`Error fetching stats for workspace ${workspace.id}:`, error);
+        statsMap[workspace.id] = { content: 0, approved: 0, scheduled: 0 };
+      }
+    };
+
+    // Process workspaces in batches to avoid overwhelming the server
+    for (let i = 0; i < workspaceList.length; i += concurrencyLimit) {
+      const batch = workspaceList.slice(i, i + concurrencyLimit);
+      await Promise.all(batch.map(fetchWorkspaceStats));
+    }
+
+    setStats(statsMap);
   };
 
   const handleDelete = async (id: string) => {
@@ -38,29 +97,50 @@ export default function WorkspacesPage() {
 
     if (!error) {
       setWorkspaces(workspaces.filter((w) => w.id !== id));
+      window.location.reload();
     }
   };
 
   const handleDuplicate = async (workspace: Workspace) => {
-    const { data, error } = await supabase
-      .from("workspaces")
-      .insert([{
-        name: `${workspace.name} (Copy)`,
-        niche: workspace.niche,
-        website_url: workspace.website_url,
-        social_handles: workspace.social_handles,
-        brand_colors: workspace.brand_colors,
-        brand_voice: workspace.brand_voice,
-        cta_style: workspace.cta_style,
-        target_audience: workspace.target_audience,
-        offer_products: workspace.offer_products,
-        forbidden_words: workspace.forbidden_words,
-        content_pillars: workspace.content_pillars,
-        ai_provider: workspace.ai_provider,
-      }]);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
 
-    if (!error && data) {
-      fetchWorkspaces();
+      console.log("Duplicating workspace:", workspace.name, "for user:", user.id);
+
+      const { data, error } = await supabase
+        .from("workspaces")
+        .insert([{
+          user_id: user.id,
+          name: `${workspace.name} (Copy)`,
+          niche: workspace.niche,
+          website_url: workspace.website_url,
+          social_handles: workspace.social_handles,
+          brand_colors: workspace.brand_colors,
+          brand_voice: workspace.brand_voice,
+          cta_style: workspace.cta_style,
+          target_audience: workspace.target_audience,
+          offer_products: workspace.offer_products,
+          forbidden_words: workspace.forbidden_words,
+          content_pillars: workspace.content_pillars,
+          ai_provider: workspace.ai_provider,
+          is_active: true,
+        }]);
+
+      if (error) {
+        console.error("Error duplicating workspace:", error);
+        alert(`Error duplicating workspace: ${error.message}`);
+        return;
+      }
+
+      console.log("Workspace duplicated successfully");
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -169,15 +249,15 @@ export default function WorkspacesPage() {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3 text-center text-xs mb-6">
                 <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
-                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-white font-bold text-lg">{stats[workspace.id]?.content || 0}</p>
                   <p className="text-gray-400 text-xs mt-1">Content</p>
                 </div>
                 <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
-                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-white font-bold text-lg">{stats[workspace.id]?.approved || 0}</p>
                   <p className="text-gray-400 text-xs mt-1">Approved</p>
                 </div>
                 <div className="bg-navy-800/50 border border-cyan-400/10 rounded-lg py-3 px-2">
-                  <p className="text-white font-bold text-lg">0</p>
+                  <p className="text-white font-bold text-lg">{stats[workspace.id]?.scheduled || 0}</p>
                   <p className="text-gray-400 text-xs mt-1">Scheduled</p>
                 </div>
               </div>

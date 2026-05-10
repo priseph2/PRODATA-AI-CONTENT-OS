@@ -51,20 +51,28 @@ export interface GeneratedContent {
   workspace_id: string;
   input_id?: string;
   content_type: string;
-  platform: "instagram" | "facebook" | "linkedin" | "twitter";
+  platform: "instagram" | "facebook" | "linkedin" | "twitter" | "tiktok";
   content_text: string;
-  status: "draft" | "approved" | "rejected";
+  status: "draft" | "approved" | "rejected" | "published";
   scheduled_at?: string;
+  image_url?: string;
+  template_id?: string;
+  variation_set?: string;
+  variation_index?: number;
+  variation_angle?: string;
   created_at: string;
 }
 
 export interface ScheduledPost {
   id: string;
   content_id: string;
+  workspace_id: string;
   platform: string;
   scheduled_at: string;
   published_at?: string;
+  platform_post_id?: string;
   status: "scheduled" | "published" | "failed";
+  error_message?: string;
 }
 
 export interface SocialAccount {
@@ -73,7 +81,11 @@ export interface SocialAccount {
   platform: "instagram" | "facebook" | "linkedin" | "twitter" | "tiktok";
   access_token: string;
   refresh_token?: string;
-  expires_at: string;
+  expires_at?: string;
+  account_id?: string;
+  account_name?: string;
+  page_id?: string;
+  created_at?: string;
 }
 
 export interface Recipe {
@@ -83,6 +95,37 @@ export interface Recipe {
   trigger_type: string;
   n8n_webhook_url: string;
   is_active: boolean;
+  created_at: string;
+}
+
+export interface ContentTemplate {
+  id: string;
+  workspace_id: string;
+  name: string;
+  platform: "instagram" | "facebook" | "linkedin" | "twitter" | "tiktok";
+  template_text: string;
+  category?: string;
+  created_at: string;
+}
+
+export interface PostAnalytics {
+  id: string;
+  workspace_id: string;
+  scheduled_post_id: string;
+  platform: string;
+  platform_post_id?: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saved: number;
+  reach: number;
+  total_interactions: number;
+  post_impressions: number;
+  post_impressions_unique: number;
+  post_clicks: number;
+  post_reactions_like_total: number;
+  synced_at: string;
   created_at: string;
 }
 
