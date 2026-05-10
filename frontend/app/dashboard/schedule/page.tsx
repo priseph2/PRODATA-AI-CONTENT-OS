@@ -16,6 +16,8 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [viewingPost, setViewingPost] = useState<(ScheduledPost & { content_text?: string; platform?: string }) | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "published" | "failed">("all");
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -117,14 +119,13 @@ export default function SchedulePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Remove this scheduled post?")) return;
-
     try {
       await supabase.from("scheduled_posts").delete().eq("id", id);
       setScheduledPosts(scheduledPosts.filter((p) => p.id !== id));
+      setDeletingPostId(null);
+      setViewingPost(null);
     } catch (error) {
       console.error("Error deleting post:", error);
-      alert("Failed to delete post");
     }
   };
 
@@ -266,7 +267,7 @@ export default function SchedulePage() {
                         <span className="truncate text-xs capitalize">{post.platform}</span>
                       </button>
                       <button
-                        onClick={() => handleDelete(post.id)}
+                        onClick={() => setDeletingPostId(post.id)}
                         className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400 transition-all flex-shrink-0"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -282,19 +283,36 @@ export default function SchedulePage() {
 
       {/* Upcoming Posts */}
       <div className="card-glass border-cyan-400/20 p-8">
-        <div className="flex items-center gap-2 mb-6">
-          <Calendar className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-2xl font-bold text-white">Upcoming Posts</h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-2xl font-bold text-white">Posts</h3>
+          </div>
+          <div className="flex gap-2">
+            {(["all", "scheduled", "published", "failed"] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1 text-xs rounded-lg transition-all capitalize ${
+                  statusFilter === status
+                    ? "bg-cyan-400/20 text-cyan-300 border border-cyan-400/30"
+                    : "bg-navy-800/50 text-gray-400 border border-cyan-400/10 hover:text-cyan-300"
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
         </div>
 
         {scheduledPosts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400">No scheduled posts yet</p>
+            <p className="text-gray-400">No posts yet</p>
             <p className="text-gray-500 text-sm mt-1">Schedule approved content from the Approval Board</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {scheduledPosts.slice(0, 10).map((post) => (
+            {scheduledPosts.filter((post) => statusFilter === "all" || post.status === statusFilter).slice(0, 10).map((post) => (
               <div
                 key={post.id}
                 className="flex items-center justify-between p-4 bg-navy-800/30 border border-cyan-400/10 rounded-lg hover:border-cyan-400/30 transition-all group"
@@ -352,7 +370,7 @@ export default function SchedulePage() {
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(post.id)}
+                    onClick={() => setDeletingPostId(post.id)}
                     className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-400 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -362,7 +380,44 @@ export default function SchedulePage() {
             ))}
           </div>
         )}
+
+        {/* Status Filter Note */}
+        {scheduledPosts.length > 10 && (
+          <p className="text-xs text-gray-500 text-center mt-4">
+            Showing {scheduledPosts.filter((p) => statusFilter === "all" || p.status === statusFilter).length} of {scheduledPosts.length} posts
+          </p>
+        )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletingPostId && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setDeletingPostId(null)}
+        >
+          <div
+            className="card-glass border border-red-400/20 max-w-sm w-full p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-2">Delete Post?</h3>
+            <p className="text-gray-400 mb-6">This will permanently remove this scheduled post. This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingPostId(null)}
+                className="flex-1 px-4 py-3 bg-navy-800/50 border border-cyan-400/20 text-white rounded-lg hover:border-cyan-400/50 transition-all font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deletingPostId)}
+                className="flex-1 px-4 py-3 bg-red-400/20 border border-red-400/30 text-red-300 rounded-lg hover:bg-red-400/30 transition-all font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewingPost && (
         <div
@@ -404,10 +459,7 @@ export default function SchedulePage() {
                 Close
               </button>
               <button
-                onClick={() => {
-                  handleDelete(viewingPost.id);
-                  setViewingPost(null);
-                }}
+                onClick={() => setDeletingPostId(viewingPost.id)}
                 className="flex-1 px-4 py-3 bg-red-400/20 border border-red-400/30 text-red-300 rounded-lg hover:bg-red-400/30 transition-all font-medium flex items-center justify-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />

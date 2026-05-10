@@ -76,8 +76,16 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch(
-        `/api/analytics?workspace_id=${selectedWorkspace}`
+        `/api/analytics?workspace_id=${selectedWorkspace}`,
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
       );
 
       if (!response.ok) {
@@ -95,9 +103,15 @@ export default function AnalyticsPage() {
   const handleSyncAnalytics = async () => {
     setSyncing(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch("/api/analytics/sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({ workspace_id: selectedWorkspace }),
       });
 
@@ -291,7 +305,7 @@ export default function AnalyticsPage() {
                   <th className="px-6 py-4 text-right text-gray-400 font-medium">Reach</th>
                   <th className="px-6 py-4 text-right text-gray-400 font-medium">Likes</th>
                   <th className="px-6 py-4 text-right text-gray-400 font-medium">Comments</th>
-                  <th className="px-6 py-4 text-right text-gray-400 font-medium">Shares</th>
+                  <th className="px-6 py-4 text-right text-gray-400 font-medium">Engagement</th>
                   <th className="px-6 py-4 text-right text-gray-400 font-medium">Published</th>
                 </tr>
               </thead>

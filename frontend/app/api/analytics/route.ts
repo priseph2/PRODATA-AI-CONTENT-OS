@@ -3,6 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request: Request) {
   try {
+    // Check for auth token
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
     const { searchParams } = new URL(request.url);
     const workspace_id = searchParams.get("workspace_id");
 
@@ -13,9 +20,17 @@ export async function GET(request: Request) {
       );
     }
 
+    // Use authenticated client so RLS policies are enforced
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
     );
 
     // Fetch analytics data for the workspace
